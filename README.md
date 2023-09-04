@@ -1,8 +1,9 @@
-# Welcome to your CDK Go project!
+# CDK in Golang
 
-This is a blank project for CDK development with Go.
+This project shows how you can write your CDK stacks in golang plus lambda.
 
-The `cdk.json` file tells the CDK toolkit how to execute your app.
+![image](images/1.png)
+
 
 ## Useful commands
 
