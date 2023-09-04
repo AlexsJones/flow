@@ -20,12 +20,6 @@ type Resp struct {
 
 func handleRequest(event events.APIGatewayV2HTTPRequest) (events.APIGatewayProxyResponse, error) {
 
-	resp := Resp{
-		Body: fmt.Sprintf("%s request to %v is successful!", event.RequestContext.HTTP.Method, event.RequestContext.RouteKey),
-	}
-
-	msg, _ := json.Marshal(resp)
-
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("eu-west-2"),
 	})
@@ -35,6 +29,12 @@ func handleRequest(event events.APIGatewayV2HTTPRequest) (events.APIGatewayProxy
 	svc := sns.New(sess)
 
 	top := os.Getenv("TOPIC_ARN")
+
+	resp := Resp{
+		Body: fmt.Sprintf("Publishing to SNS topic %s", top),
+	}
+
+	msg, _ := json.Marshal(resp)
 
 	log.Println("Publishing to SNS topic:", top)
 
