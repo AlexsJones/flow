@@ -2,7 +2,11 @@ package main
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awssnssubscriptions"
+
 	// "github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
+	golambda "github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
@@ -18,12 +22,27 @@ func NewFlowStack(scope constructs.Construct, id string, props *FlowStackProps) 
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	// The code that defines your stack goes here
+	// Create SNS topic
+	topic := awssns.NewTopic(stack, jsii.String("FlowTopic"), &awssns.TopicProps{
+		DisplayName: jsii.String("FlowTopic"),
+	})
 
-	// example resource
-	// queue := awssqs.NewQueue(stack, jsii.String("FlowQueue"), &awssqs.QueueProps{
-	// 	VisibilityTimeout: awscdk.Duration_Seconds(jsii.Number(300)),
-	// })
+	publisher := golambda.NewGoFunction(stack, jsii.String("PublisherLambda"), &golambda.GoFunctionProps{
+		Entry: jsii.String("lambda/publisher/main.go"),
+		Environment: &map[string]*string{
+			"TOPIC_ARN": topic.TopicArn(),
+		},
+	})
+	// Allow the publisher to publish to the topic
+	topic.GrantPublish(publisher)
+
+	consumer := golambda.NewGoFunction(stack, jsii.String("ConsumerLambda"), &golambda.GoFunctionProps{
+		Entry:       jsii.String("lambda/consumer/main.go"),
+		Environment: &map[string]*string{},
+	})
+	// subscriber the consumer to the topic
+	topic.AddSubscription(awssnssubscriptions.NewLambdaSubscription(consumer,
+		&awssnssubscriptions.LambdaSubscriptionProps{}))
 
 	return stack
 }
