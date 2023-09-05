@@ -20,8 +20,10 @@ type Resp struct {
 
 func handleRequest(event events.APIGatewayV2HTTPRequest) (events.APIGatewayProxyResponse, error) {
 
+	region := os.Getenv("REGION")
+
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("eu-west-2"),
+		Region: &region,
 	})
 	if err != nil {
 		log.Fatal(err.Error())

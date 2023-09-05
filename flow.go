@@ -31,6 +31,7 @@ func NewFlowStack(scope constructs.Construct, id string, props *FlowStackProps) 
 		Entry: jsii.String("lambda/publisher/main.go"),
 		Environment: &map[string]*string{
 			"TOPIC_ARN": topic.TopicArn(),
+			"REGION":    stack.Region(),
 		},
 	})
 	// Allow the publisher to publish to the topic

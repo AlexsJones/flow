@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -13,18 +11,16 @@ type Resp struct {
 	Body string
 }
 
-func handleRequest(event events.APIGatewayV2HTTPRequest) (events.APIGatewayProxyResponse, error) {
+func handleRequest(event events.SNSEvent) (events.APIGatewayProxyResponse, error) {
 
-	resp := Resp{
-		Body: fmt.Sprintf("%s request to %v is successful!", event.RequestContext.HTTP.Method, event.RequestContext.RouteKey),
+	for _, record := range event.Records {
+		snsRecord := record.SNS
+		log.Println("Message:", snsRecord.Message)
 	}
 
-	log.Println("Received event:", event)
-
-	msg, _ := json.Marshal(resp)
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Body:       string(msg),
+		Body:       "",
 	}, nil
 }
 
