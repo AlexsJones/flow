@@ -18,10 +18,13 @@ type Resp struct {
 	Body string
 }
 
-func handleRequest(event events.APIGatewayV2HTTPRequest) (events.APIGatewayProxyResponse, error) {
+type Publisher struct {
+	Payload string `json:"name"`
+}
+
+func handleRequest(event Publisher) (events.APIGatewayProxyResponse, error) {
 
 	region := os.Getenv("REGION")
-
 	sess, err := session.NewSession(&aws.Config{
 		Region: &region,
 	})
@@ -29,19 +32,15 @@ func handleRequest(event events.APIGatewayV2HTTPRequest) (events.APIGatewayProxy
 		log.Fatal(err.Error())
 	}
 	svc := sns.New(sess)
-
 	top := os.Getenv("TOPIC_ARN")
-
-	resp := Resp{
-		Body: fmt.Sprintf("Publishing to SNS topic %s", top),
-	}
-
-	msg, _ := json.Marshal(resp)
-
 	log.Println("Publishing to SNS topic:", top)
 
+	payload := "test message"
+	if event.Payload != "" {
+		payload = event.Payload
+	}
 	r, err := svc.Publish(&sns.PublishInput{
-		Message:  jsii.String("test message"),
+		Message:  jsii.String(payload),
 		TopicArn: &top,
 	})
 
@@ -52,6 +51,11 @@ func handleRequest(event events.APIGatewayV2HTTPRequest) (events.APIGatewayProxy
 
 	log.Println("SNS Message published. Message ID:", *r.MessageId)
 
+	resp := Resp{
+		Body: fmt.Sprintf("Publishing to SNS topic %s", top),
+	}
+
+	msg, _ := json.Marshal(resp)
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
 		Body:       string(msg),
