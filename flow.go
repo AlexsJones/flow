@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsdynamodb"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awssnssubscriptions"
-
 	golambda "github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -21,9 +21,18 @@ func NewFlowStack(scope constructs.Construct, id string, props *FlowStackProps) 
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
+	// Create db
+	db := awsdynamodb.NewTable(stack, jsii.String("FlowTable"), &awsdynamodb.TableProps{
+		TableName: jsii.String("FlowTable"),
+		PartitionKey: &awsdynamodb.Attribute{
+			Name: jsii.String("id"),
+			Type: awsdynamodb.AttributeType_STRING,
+		},
+	})
+
 	// Create SNS topic
-	topic := awssns.NewTopic(stack, jsii.String("FlowTopic"), &awssns.TopicProps{
-		DisplayName: jsii.String("FlowTopic"),
+	topic := awssns.NewTopic(stack, jsii.String("LambdaInput"), &awssns.TopicProps{
+		DisplayName: jsii.String("LambdaInput"),
 	})
 
 	publisher := golambda.NewGoFunction(stack, jsii.String("PublisherLambda"), &golambda.GoFunctionProps{
@@ -37,9 +46,13 @@ func NewFlowStack(scope constructs.Construct, id string, props *FlowStackProps) 
 	topic.GrantPublish(publisher)
 
 	consumer := golambda.NewGoFunction(stack, jsii.String("ConsumerLambda"), &golambda.GoFunctionProps{
-		Entry:       jsii.String("lambda/consumer/main.go"),
-		Environment: &map[string]*string{},
+		Entry: jsii.String("lambda/consumer/main.go"),
+		Environment: &map[string]*string{
+			"REGION": stack.Region(),
+		},
 	})
+	// Allow the consumer to store in the db
+	db.GrantWriteData(consumer)
 	// subscriber the consumer to the topic
 	topic.AddSubscription(awssnssubscriptions.NewLambdaSubscription(consumer,
 		&awssnssubscriptions.LambdaSubscriptionProps{}))
