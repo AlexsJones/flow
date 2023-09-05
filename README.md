@@ -4,6 +4,22 @@ This project shows how you can write your CDK stacks in golang plus lambda.
 
 ![image](images/1.png)
 
+## Structure
+
+```
+├── flow.go # <---- CDK stack
+├── flow_test.go
+├── go.mod
+├── go.sum
+├── images
+│   └── 1.png
+└── lambda  # <----- Golang lambda functions
+    ├── consumer
+    │   └── main.go 
+    └── publisher
+        └── main.go
+```
+
 
 ## Useful commands
 
